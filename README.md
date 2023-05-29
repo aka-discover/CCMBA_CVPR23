@@ -1,5 +1,5 @@
 ## Improving Robustness of Semantic Segmentation to Motion-Blur using Class-Centric Augmentation (CVPR 2023)
-[Paper](https://openaccess.thecvf.com/content/ICCV2021/papers/Rachavarapu_Localize_to_Binauralize_Audio_Spatialization_F(https://openaccess.thecvf.com/content/CVPR2023/papers/Aakanksha_Improving_Robustness_of_Semantic_Segmentation_to_Motion-Blur_Using_Class-Centric_Augmentation_CVPR_2023_paper.pdf) |  [Supp-PDF](https://openaccess.thecvf.com/content/CVPR2023/supplemental/Aakanksha_Improving_Robustness_of_CVPR_2023_supplemental.pdf) | [Bibtex](https://github.com/aka-discover/CCMBA_CVPR23/#citation)
+[Paper](https://openaccess.thecvf.com/content/CVPR2023/papers/Aakanksha_Improving_Robustness_of_Semantic_Segmentation_to_Motion-Blur_Using_Class-Centric_Augmentation_CVPR_2023_paper.pdf) |  [Supp-PDF](https://openaccess.thecvf.com/content/CVPR2023/supplemental/Aakanksha_Improving_Robustness_of_CVPR_2023_supplemental.pdf) | [Bibtex](https://github.com/aka-discover/CCMBA_CVPR23/#citation)
 
 
 ## Code
