@@ -11,7 +11,7 @@ import cv2
 import os
 
 ################### functions for blurring
-def blurwithkernel(s_img, k_img, saveimg=True, savelocation='./blurcheckfordataloader'):
+def blurwithkernel(s_img, k_img):
     """Inputs are two rgb PIL images - and the output should also be PIL image of same size """
     s_img = np.array(s_img)/255
     k_img = np.array(k_img)
@@ -33,14 +33,13 @@ def objectselectivemotionblur(sharp,objectsegmap,kernel):
     blurred_foreground_img = blurwithkernel(foreground_img,kernel)
 
     selectiveblurred_img = Image.fromarray(((np.array(blurred_foreground_img)+np.array(background_img))).astype(np.uint8))
-    selectiveblurred_img.save('blurredImage.jpg')
     return selectiveblurred_img
 
 
 
 
 
-# Additional Transform for motion blur ###################################################
+# Transform for class centric motion blur ###################################################
 #
 class ExtCCMBA(object):
     """Blur the image using a randomly sampled kernel from total 3level kernels.
@@ -88,7 +87,6 @@ class ExtCCMBA(object):
             if len(ClassesInImage)==0:
                 return img,lbl
 
-##################
             nclass2consider = random.randint(1,len(ClassesInImage)) #atleast 1 class blurred, upto all classes blurred
             # print('number of classes being considered for blurring',nclass2consider)
             if len(ClassesInImage)==0:
@@ -105,221 +103,12 @@ class ExtCCMBA(object):
             segmap_outfinal = np.amax(segmap_out, axis=2)
             objectsegmap = Image.fromarray(segmap_outfinal.astype(np.uint8)) 
 
-####################
             #objectselective motion blurring
             out = objectselectivemotionblur(img,objectsegmap,kernel)
             outlist.append(out)
             return outlist[0],lbl
         else:
             return img,lbl
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###########################################################################
-class ExtMixedBlurAugmentation(object):
-    def __init__(self, p=0.5):
-        self.excludeblur = Ext3LevelObjectExclusiveMotionBlur() 
-        self.selectblur = Ext3LevelObjectSelectiveMotionBlur()
-        self.allblur = Ext3LevelMotionBlur()
-    def __call__(self,imglist, lbl):
-        if random.random() < 0.33:
-            return self.selectblur(imglist,lbl)
-        elif random.random() < 0.66:
-            return self.excludeblur(imglist,lbl)
-        else:
-            return self.allblur(imglist,lbl)
-
-
-
-
-class Ext3LevelObjectExclusiveMotionBlur(object):
-    """Blur the image using a randomly sampled kernel from total 3level kernels.
-
-    Args:
-        output_size (tuple or int): Desired output size. If int, square crop
-            is made.
-    """
-    def __init__(self, p=0.5):
-        self.kerneldirectory = '/data1/user_data/aakanksha/ZZZ_datasets/blurRelated/VOCdevkit/VOC2012/blur_kernels_levelwise/'
-        blurlevels = [1,2,3]
-        self.kernelpathslist = []
-        subdirlist = os.listdir(self.kerneldirectory)
-        for subdir in subdirlist:
-            if int(subdir.split('_')[-1]) in blurlevels:
-                path_directory = os.path.join(self.kerneldirectory,subdir)
-                pathfilenames = os.listdir(path_directory)
-                for pathfilename in pathfilenames:
-                    filepath = os.path.join(path_directory,pathfilename)
-                    self.kernelpathslist.append(filepath)
-        random.shuffle(self.kernelpathslist)
-        self.p = p
-    def __call__(self, imglist, lbl):
-        """
-        Args:
-            img (PIL Image): Sharp Image to be Selectively Blurred.
-
-        Returns:
-            PIL Image: Selectively Blur one class.
-        """
-        outlist = []
-        if random.random() < self.p:
-            img = imglist[0]
-            #select a random blur kernel and read it
-            kernelid = random.randint(0, len(self.kernelpathslist)-1)
-            kernel = Image.open(self.kernelpathslist[kernelid])
-
-            #segmap foreground filtering - select one of the n classes or the background - total n+1 classes
-            segmap_foreground = np.array(lbl)+1
-            ClassesInImage = list(np.unique(lbl))
-            #print(ClassesInImage)
-            boundary = 255
-            if boundary in ClassesInImage: ClassesInImage.remove(boundary)
-            random.shuffle(ClassesInImage)
-            if len(ClassesInImage)==0:
-                return imglist,lbl
-            classconsidered = ClassesInImage[0]
-
-            #getting the foreground mask as PIL Image ################################# just flipped 0 and 255 ####################################
-            segmap_foreground[segmap_foreground!=(classconsidered+1)]=255
-            segmap_foreground[segmap_foreground==(classconsidered+1)]=0
-            objectsegmap = Image.fromarray(segmap_foreground.astype(np.uint8)) 
-
-            #objectselective motion blurring
-            out = objectselectivemotionblur(img,objectsegmap,kernel)
-            outlist.append(out)
-            return outlist,lbl
-        else:
-            return imglist,lbl
-
-
-
-class Ext3LevelObjectSelectiveMotionBlur(object):
-    """Blur the image using a randomly sampled kernel from total 3level kernels.
-
-    Args:
-        output_size (tuple or int): Desired output size. If int, square crop
-            is made.
-    """
-    def __init__(self, p=0.5):
-        self.kerneldirectory = '/data1/user_data/aakanksha/ZZZ_datasets/blurRelated/VOCdevkit/VOC2012/blur_kernels_levelwise/'
-        blurlevels = [1,2,3]
-        self.kernelpathslist = []
-        subdirlist = os.listdir(self.kerneldirectory)
-        for subdir in subdirlist:
-            if int(subdir.split('_')[-1]) in blurlevels:
-                path_directory = os.path.join(self.kerneldirectory,subdir)
-                pathfilenames = os.listdir(path_directory)
-                for pathfilename in pathfilenames:
-                    filepath = os.path.join(path_directory,pathfilename)
-                    self.kernelpathslist.append(filepath)
-        random.shuffle(self.kernelpathslist)
-        self.p = p
-    def __call__(self, imglist, lbl):
-        """
-        Args:
-            img (PIL Image): Sharp Image to be Selectively Blurred.
-
-        Returns:
-            PIL Image: Selectively Blur one class.
-        """
-        outlist = []
-        if random.random() < self.p:
-            img = imglist[0]
-            #select a random blur kernel and read it
-            kernelid = random.randint(0, len(self.kernelpathslist)-1)
-            kernel = Image.open(self.kernelpathslist[kernelid])
-
-            #segmap foreground filtering - select one of the n classes or the background - total n+1 classes
-            segmap_foreground = np.array(lbl)+1
-            ClassesInImage = list(np.unique(lbl))
-            #print(ClassesInImage)
-            boundary = 255
-            if boundary in ClassesInImage: ClassesInImage.remove(boundary)
-            random.shuffle(ClassesInImage)
-            if len(ClassesInImage)==0:
-                return imglist,lbl
-            classconsidered = ClassesInImage[0]
-
-            #getting the foreground mask as PIL Image
-            segmap_foreground[segmap_foreground!=(classconsidered+1)]=0
-            segmap_foreground[segmap_foreground==(classconsidered+1)]=255
-            objectsegmap = Image.fromarray(segmap_foreground.astype(np.uint8)) 
-
-            #objectselective motion blurring
-            out = objectselectivemotionblur(img,objectsegmap,kernel)
-            outlist.append(out)
-            return outlist,lbl
-        else:
-            return imglist,lbl
-
-class Ext3LevelMotionBlur(object):
-    """Blur the image using a randomly sampled kernel from total 3level kernels.
-
-    Args:
-        output_size (tuple or int): Desired output size. If int, square crop
-            is made.
-    """
-    def __init__(self, p=0.5):
-        self.kerneldirectory = '/data1/user_data/aakanksha/ZZZ_datasets/blurRelated/VOCdevkit/VOC2012/blur_kernels_levelwise/'
-        blurlevels = [1,2,3]
-        self.kernelpathslist = []
-        subdirlist = os.listdir(self.kerneldirectory)
-        for subdir in subdirlist:
-            if int(subdir.split('_')[-1]) in blurlevels:
-                path_directory = os.path.join(self.kerneldirectory,subdir)
-                pathfilenames = os.listdir(path_directory)
-                for pathfilename in pathfilenames:
-                    filepath = os.path.join(path_directory,pathfilename)
-                    self.kernelpathslist.append(filepath)
-        random.shuffle(self.kernelpathslist)
-        self.p = p
-
-
-    def __call__(self, imglist, lbl):
-        """
-        Args:
-            img (PIL Image): Image to be blurred.
-
-        Returns:
-            PIL Image: Randomly blured image.
-        """
-        if random.random() < self.p:
-            imglist2 = []
-            kernelid = random.randint(0, len(self.kernelpathslist)-1)
-            #read kernel image
-            kernel = Image.open(self.kernelpathslist[kernelid])
-            # print(len(self.kernelpathslist), kernelid)
-            for img in imglist:
-                #convolve PIL image in imglist with the same blur
-                convpilimg = blurwithkernel(img, kernel)
-                imglist2.append(convpilimg)
-            return imglist2, lbl
-        else:
-            return imglist,lbl
-##########################################################################################
-
 
 #
 #  Extended Transforms for Semantic Segmentation
