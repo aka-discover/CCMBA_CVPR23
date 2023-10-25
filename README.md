@@ -3,8 +3,11 @@
 
 
 ## Code
-Coming soon!
+The code for CCMBA has now been released!
+The Pytorch code for the custom transform can be found in ext_transforms.py and sample code for use has been provided in tester.py for the VOC dataset. 
+Note that the motion blur kernels need to be generated and stored in the following directory structure for use. 
 
+![directoryStruct](https://github.com/aka-discover/CCMBA_CVPR23/assets/96165929/7d47fd87-a009-4ba2-872d-7835774cde2a)
 
 
 ## Citation
